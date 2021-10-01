@@ -15,7 +15,7 @@ edx[edx == "null"] = NA
 edx_extended[edx_extended == "null"] = NA
 
 # Removing all na's from edx_extended
-edx_clean <- na.omit(edx_extended)
+edx_clean <- edx_extended[!is.na(edx_extended$course_name), ]
 
 # Removing the pagination variable in edx
 edx$pagination = NULL
@@ -40,24 +40,38 @@ edx_clean_courses <- edx_clean %>%
   transmute(course_name = course_name)
 
 # Showing the courses that are in edx_clean_courses but not in edx edx_courses
-anti_join(edx_clean_courses, edx_courses) %>% 
-  view()
+unique_courses_edx_clean <- anti_join(edx_clean_courses, edx_courses)
 
 # Showing the courses that are in edx_courses but not in edx edx_clean_courses
-anti_join(edx_courses, edx_clean_courses) %>% 
-  view()
+unique_courses_edx <- anti_join(edx_courses, edx_clean_courses)
+
 
 # Getting number of courses per topic
-edx_clean %>% 
+edx_clean_freq_topics <- edx_clean %>% 
   group_by(topics) %>% 
   summarise(freq = n()) %>% 
   ungroup() %>% 
-  arrange(-freq) %>% 
-  View()
+  arrange(-freq) 
 
+edx_clean_first_15 <- edx_clean_freq_topics %>% 
+  filter(freq >= 14)
 
+edx_clean_first_15 %>% 
+  ggplot() +
+  geom_bar(aes(x=freq, y=reorder(topics, freq), fill = topics), stat = 'identity')
 
+edx_clean_other <- edx_clean_freq_topics %>% 
+  filter(freq <= 13)
 
+edx_clean_other %>%
+  summarise(sum_of_courses = sum(freq))
 
+edx_clean_summary <- edx_clean_first_15 %>% 
+  rows_insert(tibble(topics='other', freq=1222))
+
+edx_clean_summary %>% 
+  ggplot() +
+  geom_bar(aes(x=freq, y=reorder(topics, freq), fill = topics), stat = 'identity') +
+  scale_x_log10()
 
 
